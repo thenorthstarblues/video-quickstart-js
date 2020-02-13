@@ -7,6 +7,17 @@ var previewTracks;
 var identity;
 var roomName;
 
+// Activity log.
+function log(message) {
+  var logDiv = document.getElementById('log');
+  logDiv.innerHTML += '<p>&gt;&nbsp;' + message + '</p>';
+  logDiv.scrollTop = logDiv.scrollHeight;
+}
+
+(function() {
+  window.console.log = log
+})()
+
 // Attach the Track to the DOM.
 function attachTrack(track, container) {
   container.appendChild(track.attach());
@@ -52,7 +63,7 @@ function trackPublished(publication, container) {
     attachTrack(publication.track, container);
   }
   publication.on('subscribed', function(track) {
-    log('Subscribed to ' + publication.kind + ' track');
+    console.log('Subscribed to ' + publication.kind + ' track');
     attachTrack(track, container);
   });
   publication.on('unsubscribed', detachTrack);
@@ -60,7 +71,7 @@ function trackPublished(publication, container) {
 
 // A RemoteTrack was unpublished from the Room.
 function trackUnpublished(publication) {
-  log(publication.kind + ' track was unpublished.');
+  console.log(publication.kind + ' track was unpublished.');
 }
 
 // A new RemoteParticipant joined the Room
@@ -103,7 +114,7 @@ $.getJSON('/token', function(data) {
       return;
     }
 
-    log("Joining room '" + roomName + "'...");
+    console.log("Joining room '" + roomName + "'...");
     var connectOptions = {
       name: roomName,
       logLevel: 'debug'
@@ -116,13 +127,13 @@ $.getJSON('/token', function(data) {
     // Join the Room with the token from the server and the
     // LocalParticipant's Tracks.
     Video.connect(data.token, connectOptions).then(roomJoined, function(error) {
-      log('Could not connect to Twilio: ' + error.message);
+      console.log('Could not connect to Twilio: ' + error.message);
     });
   };
 
   // Bind button to leave Room.
   document.getElementById('button-leave').onclick = function() {
-    log('Leaving room...');
+    console.log('Leaving room...');
     activeRoom.disconnect();
   };
 });
@@ -140,7 +151,7 @@ function getTracks(participant) {
 function roomJoined(room) {
   window.room = activeRoom = room;
 
-  log("Joined as '" + identity + "'");
+  console.log("Joined as '" + identity + "'");
   document.getElementById('button-join').style.display = 'none';
   document.getElementById('button-leave').style.display = 'block';
 
@@ -153,19 +164,19 @@ function roomJoined(room) {
   // Attach the Tracks of the Room's Participants.
   var remoteMediaContainer = document.getElementById('remote-media');
   room.participants.forEach(function(participant) {
-    log("Already in Room: '" + participant.identity + "'");
+    console.log("Already in Room: '" + participant.identity + "'");
     participantConnected(participant, remoteMediaContainer);
   });
 
   // When a Participant joins the Room, log the event.
   room.on('participantConnected', function(participant) {
-    log("Joining: '" + participant.identity + "'");
+    console.log("Joining: '" + participant.identity + "'");
     participantConnected(participant, remoteMediaContainer);
   });
 
   // When a Participant leaves the Room, detach its Tracks.
   room.on('participantDisconnected', function(participant) {
-    log("RemoteParticipant '" + participant.identity + "' left the room");
+    console.log("RemoteParticipant '" + participant.identity + "' left the room");
     detachParticipantTracks(participant);
     removeName(participant);
   });
@@ -173,7 +184,7 @@ function roomJoined(room) {
   // Once the LocalParticipant leaves the room, detach the Tracks
   // of all Participants, including that of the LocalParticipant.
   room.on('disconnected', function() {
-    log('Left');
+    console.log('Left');
     if (previewTracks) {
       previewTracks.forEach(function(track) {
         track.stop();
@@ -203,17 +214,10 @@ document.getElementById('button-preview').onclick = function() {
       }
     },function(error) {
       console.error('Unable to access local media', error);
-      log('Unable to access Camera and Microphone');
+      console.log('Unable to access Camera and Microphone');
     }
   );
 };
-
-// Activity log.
-function log(message) {
-  var logDiv = document.getElementById('log');
-  logDiv.innerHTML += '<p>&gt;&nbsp;' + message + '</p>';
-  logDiv.scrollTop = logDiv.scrollHeight;
-}
 
 // Leave Room.
 function leaveRoomIfJoined() {
